@@ -1,11 +1,12 @@
 const Discord = require('discord.js');
 const Client = new Discord.Client();
+const axios = require('axios');
 const config = require('./config.json');
 var users = require('./users.json');
 var userRole = [];
 var user = [];
+var osuuser = "";
 Client.login(config.token);
-
 Client.on("ready", async () => {
   console.log("CodibBot started...");
   Client.user.setStatus('online')
@@ -37,8 +38,6 @@ Client.on("guildCreate", async () => {
   updateServerList()
 })
 Client.on('guildMemberAdd', member => {
-if (member.guild.name === "Genast Studio")
-{
   for(var i in users)
     userRole.push(users[i]);
 
@@ -51,13 +50,6 @@ if (member.guild.name === "Genast Studio")
       return member.addRole(member.guild.roles.find('name', userRole[index]),"Авторизован как " + element);
     }
   }
-  const reason = "Не авторизован в базе";
-  return member.kick(reason);
-}
-else
-{
-  return;
-}
 });
 Client.on('message',(message)=> {
 if (message.author.bot) {
@@ -109,6 +101,11 @@ if (message.content.startsWith("!help"))
         value: "Предоставляет информацию о пользователе/участнике сервера Discord",
         inline: true
       },
+      {
+        name: "!osu user (Имя пользователя)",
+        value: "Предоставляет информацию о пользователе https://osu.ppy.sh/",
+        inline: true
+      }
     ]
   }})
 }
@@ -218,7 +215,7 @@ else if(message.content.startsWith("!uinfo")){
           url: user.avatarURL
         }
       }})
-    })
+    }).catch(message.channel.send("Не удается найти пользователя. FAQ: https://support.discordapp.com/hc/ru/articles/206346498-Где-мне-найти-ID-пользователя-сервера-сообщения-"))
   } else {
     message.channel.send({ embed: {
       title: "**Информация о пользователе**: " + user.tag,
@@ -376,6 +373,39 @@ else if (message.content.startsWith("!end vote"))
   }});
   message.delete();
   return r.clearReactions();
-});
+}).catch(message.channel.send("Не удалось найти сообщение. FAQ: https://support.discordapp.com/hc/ru/articles/206346498-%D0%93%D0%B4%D0%B5-%D0%BC%D0%BD%D0%B5-%D0%BD%D0%B0%D0%B9%D1%82%D0%B8-ID-%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8F-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D0%BD%D0%B8%D1%8F-"))
 }
+// FIX
+if (message.content.startsWith("!osu user")) {
+  osuuser = message.content.substr("!osu user ".length);
+  // 'https://osu.ppy.sh/api/get_user?u=' + osuuser + '&k=' + config.osu + '&type=string'
+  const url = 'https://osu.ppy.sh/api/get_user?u=' + osuuser + '&k=' + config.osu + '&type=string';
+  axios.default.get(url)
+  .then(response => {
+    var value = []
+    for (var i in response.data[0])
+      value.push(response.data[0][i])
+    message.channel.send({ embed: {
+      title: "**Информация о пользователе osu!**: " + value[1],
+      description: "**ID**: " + value[0] + "\n**Уровень**: " + value[10] + "\n**Пользователь зарегистрирован**: " + value[2] + "\n**Количество сыгранных игр\***: " + value[6] + "\n**Показатель производительности**: " + value[11] + "\n**Место в мире**: " + value[9] + " (в стране " + value[18] + ": " + value[20] + ")\n**SS**: " + value[13] + "\n**SS+**: " + value[14] + "\n**S**: " + value[15] + "\n**S**+: " + value[16] + "\n**A**: " + value[17] + "\n*Подсчет статистики об играх ведется исключительно на ранкнутых/принятых/избранных картах\nЕсли показатель производительности равен нулю, это означает что пользователь долгое время был неактивен",
+      timestamp: new Date(Date.now()),
+      footer:
+      {
+        text: "Информацию запросил: " + message.author.tag,
+        icon_url: message.author.avatarURL
+      },
+      thumbnail:
+      {
+        url: 'https://a.ppy.sh/' + value[0] + '?1546500578.jpeg&quot'
+      }
+    }})
+  })
+  .catch(error => {
+    console.log(error);
+    message.channel.send("Использование: !osu user Имя аккаунта")
+  });
+}
+});
+Client.on("error", error => {
+  console.log(error.message);
 });

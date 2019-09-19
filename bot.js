@@ -3,10 +3,12 @@ const Client = new Discord.Client();
 const axios = require('axios');
 const config = require('./config.json');
 var users = require('./users.json');
+var fs = require('fs');
 var userRole = [];
 var user = [];
 var osuuser = "";
 Client.login(config.token);
+
 Client.on("ready", async () => {
   console.log("CodibBot started...");
   Client.user.setStatus('online')
@@ -18,10 +20,11 @@ Client.on("ready", async () => {
   });
   updateServerList();
 });
+
 function updateServerList() {
   Client.guilds.get("603997328919101452").channels.get("616925716910702592").fetchMessage("617255059046268931").then(message => {
     message.edit({ embed: {
-      title: "Список серверов, использующих CodibBot:",
+      title: "Список серверов, использующих CodibBot(" + Client.guilds.array().length + "):",
       description: Client.guilds.array().map(g => g.name).toString(),
       timestamp: new Date(Date.now()),
       footer:
@@ -31,6 +34,7 @@ function updateServerList() {
     }})
   })
 }
+
 Client.on("guildDelete", async () => {
   updateServerList()
 })
@@ -105,8 +109,17 @@ if (message.content.startsWith("!help"))
         name: "!osu user (Имя пользователя)",
         value: "Предоставляет информацию о пользователе https://osu.ppy.sh/",
         inline: true
+      },
+      {
+        name: "!weather (Город)",
+        value: "Предоставляет информацию о погоде в указанном городе.\n**ВАЖНО!** Город указывать на английском, список городов находится тут: https://docks-codibbot.glitch.me/city-list.html",
+        inline: true
       }
-    ]
+    ],
+    footer:
+    {
+      text: require('./package.json').name + " " + require('./package.json').version + " by " + require("./package.json").author
+    } // + Build date
   }})
 }
 else if (message.content.startsWith("!kick")) {
@@ -130,9 +143,11 @@ else if (message.content.startsWith("!kick")) {
       {
         text: args[0] + ' | ' + args[1] + ' | Голосование началось'
       }
-    }}).then(votemes => {
-      votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-      votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+    }}).then(async(votemes) => {
+      await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
+      setTimeout(() => {
+        votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+      }, 100);
   })
   })
     return message.delete();
@@ -158,6 +173,24 @@ else if(message.content.startsWith("!say")){
   message.channel.send(arg);
   return message.delete();
 }
+else if (message.content.startsWith("!purge")) {
+  message.guild.fetchMember(message.author).then(async(member) =>{
+    if (member.permissions.has("ADMINISTRATOR")) {
+      let fetched;
+      fetched = await message.channel.fetchMessages({limit: parseInt(message.content.substr("!purge ".length)) + 1});
+      message.channel.bulkDelete(fetched);
+    }
+    else
+    {
+      message.channel.send("Служба контроля за погромом сервера запретила массовые удаления сообщений участникам без прав администратора.").then(mes =>{
+        setTimeout(() => {
+          mes.delete()
+        }, 5000);
+      })
+    }
+  })
+  return message.delete();
+}
 else if(message.content.startsWith("!ban")){
   const args = message.content.slice("!ban ".length).split(" | ");
   if (args.length != 2)
@@ -179,9 +212,11 @@ else if(message.content.startsWith("!ban")){
       {
         text: args[0] + ' | ' + args[1] + ' | Голосование началось'
       }
-    }}).then(votemes => {
-      votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-      votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+    }}).then(async(votemes) => {
+      await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
+      setTimeout(() => {
+        votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+      }, 100);
       message.channel.send("Для получения информации о пользователе, введите !uinfo " + user.id);
   })
   })
@@ -260,9 +295,11 @@ else if(message.content.startsWith("!vote")){
         {
           text: 'Голосование началось'
         }
-      }}).then(votemes => {
-        votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-        votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+      }}).then(async(votemes) => {
+        await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
+        setTimeout(() => {
+          votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+        }, 100);
     })
     message.delete();
 }
@@ -284,9 +321,11 @@ else if(message.content.startsWith("!summaryvote"))
         {
           text: args[5] + " | " + args[3] + ' | Голосование началось'
         }
-      }}).then(votemes => {
-        votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-        votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+      }}).then(async(votemes) => {
+        await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
+        setTimeout(() => {
+          votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
+        }, 100);
     })
     message.delete();
   }
@@ -297,41 +336,61 @@ else if (message.content.startsWith("!end vote"))
     return message.channel.send("Использование: !end vote id сообщения голосования");
   }
   message.channel.fetchMessage(id).then(r => {
-    if (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] + r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] < (r.guild.memberCount + 1) * 0.65){
-      message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
-      return message.delete();
-    }
-  var footext = r.embeds[0].footer.text;
-  var title = r.embeds[0].title;
-  var description = r.embeds[0].description.replace("Чтобы проголосовать, нажмите на кнопку внизу", "");
-  if (footext.includes("Голосование завершилось: ")) {
-    return message.channel.send("Голосование уже завершено");
-  }
-  if (title.includes("Блокировка пользователя"))
-  {
-    var banid = footext.split(" | ")[0];
-    Client.fetchUser(banid).then(banuser => { 
-      if (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] <= r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0]){
-        return;
-      }
-      r.guild.ban(banuser, footext.split(" | ")[1]);
-      message.channel.send({ embed: {
-        title: "Пользователь " + banuser.tag + " был заблокирован голосованием",
-        description: "Причина: " + footext.split(" | ")[1],
-        timestamp: new Date(Date.now()),
-        footer:
-        {
-          text: "Пользователь заблокирован",
-          icon_url: message.author.avatarURL
+    var users = 0;
+    const reactUP = (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] - 1);
+    const reactDOWN = (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] - 1);
+    const usersUP = r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.users)[0];
+    const usersDOWN = r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reactions => reactions.users)[0];
+    for (var i in usersUP)
+    {
+      for (var j in usersDOWN)
+      {
+        if (i === j) {
+          continue;
         }
-      }})
-    });
+        users = users + 1;
+      }
+    }
+    if (users < Math.ceil((r.guild.memberCount - 1) * 0.65)){
+        message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
+        return message.delete();
+    }
+    var footext = r.embeds[0].footer.text;
+    var title = r.embeds[0].title;
+    var description = r.embeds[0].description.replace("Чтобы проголосовать, нажмите на кнопку внизу", "");
+    if (footext.includes("Голосование завершилось: ")) {
+      return message.channel.send("Голосование уже завершено");
+    }
+    if (title.includes("Блокировка пользователя"))
+    {
+      var banid = footext.split(" | ")[0];
+     Client.fetchUser(banid).then(banuser => { 
+        if (reactUP <= reactDOWN){
+         return;
+       }
+       let voteusers = JSON.stringify(usersUP.map(us => us.tag));
+       voteusers = voteusers.replace("[", "");
+       voteusers = voteusers.replace("]", "");
+       voteusers = voteusers.replace("\"CodibBot#9530\",", "");
+       banuser.sendMessage("По итогам голосования №" + r.id + " вы были заблокированы на сервере " + r.guild.name + " по причине " + footext.split(" | ")[1] + ". Если вы хотите обжаловать решение, свяжитесь с любым из участников данного сервера. За вашу блокировку проголосовали: " + voteusers)
+        r.guild.ban(banuser, footext.split(" | ")[1]);
+        message.channel.send({ embed: {
+         title: "Пользователь " + banuser.tag + " был заблокирован голосованием",
+          description: "Причина: " + footext.split(" | ")[1],
+         timestamp: new Date(Date.now()),
+         footer:
+          {
+            text: "Пользователь заблокирован",
+            icon_url: message.author.avatarURL
+          }
+        }})
+      });
     }
     if (title.includes("Выгнать участника"))
     {
       var kickid = footext.split(" | ")[0];
       Client.fetchUser(kickid).then(kickuser => { 
-        if (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] <= r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0]){
+        if (reactUP <= reactDOWN){
           return;
         }
         r.guild.member(kickuser).kick(footext.split(" | ")[1]);
@@ -348,7 +407,7 @@ else if (message.content.startsWith("!end vote"))
       });
     }
   if (title.includes("Новая заявка в")) {
-    if (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] <= r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0]){
+    if (reactUP <= reactDOWN){
       return;
     }
     user.push(footext.split(" | ")[0])
@@ -359,12 +418,12 @@ else if (message.content.startsWith("!end vote"))
       description: description,
       footer:
       {
-        text: "Голосование завершилось: " + r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] + " за " + r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] + " против",
+        text: "Голосование завершилось: " + reactUP + " за " + reactDOWN + " против",
         icon_url: message.author.avatarURL
       }
   }})
   message.channel.send({ embed: {
-    description: 'Голосование завершилось с итогами ' + r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] + ' за и ' + r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] + ' против',
+    description: 'Голосование завершилось с итогами ' + reactUP + ' за и ' + reactDOWN + ' против',
     timestamp: new Date(Date.now()),
         footer:
         {
@@ -375,10 +434,8 @@ else if (message.content.startsWith("!end vote"))
   return r.clearReactions();
 })
 }
-// FIX
-if (message.content.startsWith("!osu user")) {
+else if (message.content.startsWith("!osu user")) {
   osuuser = message.content.substr("!osu user ".length);
-  // 'https://osu.ppy.sh/api/get_user?u=' + osuuser + '&k=' + config.osu + '&type=string'
   const url = 'https://osu.ppy.sh/api/get_user?u=' + osuuser + '&k=' + config.osu + '&type=string';
   axios.default.get(url)
   .then(response => {
@@ -405,7 +462,60 @@ if (message.content.startsWith("!osu user")) {
     message.channel.send("Использование: !osu user Имя аккаунта")
   });
 }
-});
-Client.on("error", error => {
-  console.log(error.message);
+else if (message.content.startsWith("!weather"))
+{
+  const arg = message.content.substr("!weather ".length);
+  const url = "http://api.openweathermap.org/data/2.5/weather?q=" + arg + "&APPID=" + config.weather
+  axios.default.get(url).then(response =>{
+    var temp = Math.round(response.data.main.temp - 273.15);
+    var pressure = Math.round(response.data.main.pressure / 1.333);
+    var weather = response.data.weather[0].main;
+    var humidity = response.data.main.humidity;
+    var wspeed = response.data.wind.speed;
+    var deg = response.data.wind.deg;
+    var degnorm;
+    if (deg >= 337.6 && deg <= 22.5) {
+      degnorm = "северный";
+    }
+    else if (deg >= 22.6 && deg <= 67.5) {
+      degnorm = "северо-восточный";
+    }
+    else if (deg >= 67.6 && deg <= 112.5) {
+      degnorm = "восточный";
+    }
+    else if (deg >= 112.6 && deg <= 157.5) {
+      degnorm = "юго-восточный";
+    }
+    else if (deg >= 157.6 && deg <= 202.5) {
+      degnorm = "южный";
+    }
+    else if (deg >= 202.6 && deg <= 247.5) {
+      degnorm = "юго-западный";
+    }
+    else if (deg >= 247.6 && deg <= 292.5) {
+      degnorm = "западный";
+    }
+    else if (deg >= 292.6 && deg <= 337.5) {
+      degnorm = "северо-западный";
+    }
+    var country = response.data.sys.country;
+    var visibility = response.data.visibility;
+    message.channel.send({embed : {
+      title: "**Информация о погоде в городе**: " + arg + "(" + country + ")",
+      description: "**Общее состояние**: " + weather + "\n**Температура**: " + temp + "°C\n**Давление**: " + pressure + "мм.рт.с\n**Влажность**: " + humidity + "%\n**Ветер " + degnorm + "**: " + wspeed + "м/с\n**Видимость**: " + visibility + "м",
+      thumbnail:
+      {
+        url: "http://openweathermap.org/img/w/" + response.data.weather[0].icon + ".png"
+      },
+      timestamp: new Date(Date.now()),
+      footer:
+      {
+        text: "Информацию запросил " + message.author.tag,
+        icon_url: message.author.avatarURL
+      }
+    }});
+  }).catch(error =>{
+    message.channel.send("Что-то пошло не так... Прикрепляю ответ API: " + error.response.status + " - " + error.response.statusText);
+  })
+}
 });

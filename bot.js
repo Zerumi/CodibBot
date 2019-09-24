@@ -3,10 +3,8 @@ const Client = new Discord.Client();
 const axios = require('axios');
 const config = require('./config.json');
 var users = require('./users.json');
-var fs = require('fs');
 var userRole = [];
 var user = [];
-var osuuser = "";
 Client.login(config.token);
 
 Client.on("ready", async () => {
@@ -38,9 +36,11 @@ function updateServerList() {
 Client.on("guildDelete", async () => {
   updateServerList()
 })
+
 Client.on("guildCreate", async () => {
   updateServerList()
 })
+
 Client.on('guildMemberAdd', member => {
   for(var i in users)
     userRole.push(users[i]);
@@ -55,6 +55,7 @@ Client.on('guildMemberAdd', member => {
     }
   }
 });
+
 Client.on('message',(message)=> {
 if (message.author.bot) {
   return;
@@ -114,6 +115,11 @@ if (message.content.startsWith("!help"))
         name: "!weather (Город)",
         value: "Предоставляет информацию о погоде в указанном городе.\n**ВАЖНО!** Город указывать на английском, список городов находится тут: https://docks-codibbot.glitch.me/city-list.html",
         inline: true
+      },
+      {
+        name: "!weather forecast (Город)",
+        value: "Предоставляет информацию о погоде в указанном городе на 4 дня вперёд.\n**ВАЖНО!** Город указывать на английском, список городов находится тут: https://docks-codibbot.glitch.me/city-list.html",
+        inline: true
       }
     ],
     footer:
@@ -145,7 +151,7 @@ else if (message.content.startsWith("!kick")) {
       }
     }}).then(async(votemes) => {
       await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-      setTimeout(() => {
+      await setTimeout(() => {
         votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
       }, 100);
   })
@@ -214,7 +220,7 @@ else if(message.content.startsWith("!ban")){
       }
     }}).then(async(votemes) => {
       await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-      setTimeout(() => {
+      await setTimeout(() => {
         votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
       }, 100);
       message.channel.send("Для получения информации о пользователе, введите !uinfo " + user.id);
@@ -297,7 +303,7 @@ else if(message.content.startsWith("!vote")){
         }
       }}).then(async(votemes) => {
         await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-        setTimeout(() => {
+        await setTimeout(() => {
           votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
         }, 100);
     })
@@ -323,7 +329,7 @@ else if(message.content.startsWith("!summaryvote"))
         }
       }}).then(async(votemes) => {
         await votemes.react(Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP"));
-        setTimeout(() => {
+        await setTimeout(() => {
           votemes.react(Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN"));
         }, 100);
     })
@@ -336,24 +342,11 @@ else if (message.content.startsWith("!end vote"))
     return message.channel.send("Использование: !end vote id сообщения голосования");
   }
   message.channel.fetchMessage(id).then(r => {
-    var users = 0;
     const reactUP = (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] - 1);
     const reactDOWN = (r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] - 1);
-    const usersUP = r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.users)[0];
-    const usersDOWN = r.reactions.filter(a => a.emoji.name == Client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reactions => reactions.users)[0];
-    for (var i in usersUP)
-    {
-      for (var j in usersDOWN)
-      {
-        if (i === j) {
-          continue;
-        }
-        users = users + 1;
-      }
-    }
-    if (users < Math.ceil((r.guild.memberCount - 1) * 0.65)){
-        message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
-        return message.delete();
+    if (reactUP + reactDOWN < Math.ceil((r.guild.memberCount - 1) * 0.65)){
+      message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
+      return message.delete();
     }
     var footext = r.embeds[0].footer.text;
     var title = r.embeds[0].title;
@@ -368,11 +361,7 @@ else if (message.content.startsWith("!end vote"))
         if (reactUP <= reactDOWN){
          return;
        }
-       let voteusers = JSON.stringify(usersUP.map(us => us.tag));
-       voteusers = voteusers.replace("[", "");
-       voteusers = voteusers.replace("]", "");
-       voteusers = voteusers.replace("\"CodibBot#9530\",", "");
-       banuser.sendMessage("По итогам голосования №" + r.id + " вы были заблокированы на сервере " + r.guild.name + " по причине " + footext.split(" | ")[1] + ". Если вы хотите обжаловать решение, свяжитесь с любым из участников данного сервера. За вашу блокировку проголосовали: " + voteusers)
+       banuser.sendMessage("По итогам голосования №" + r.id + " вы были заблокированы на сервере " + r.guild.name + " по причине " + footext.split(" | ")[1] + ". Если вы хотите обжаловать решение, свяжитесь с любым из участников данного сервера.")
         r.guild.ban(banuser, footext.split(" | ")[1]);
         message.channel.send({ embed: {
          title: "Пользователь " + banuser.tag + " был заблокирован голосованием",
@@ -435,7 +424,7 @@ else if (message.content.startsWith("!end vote"))
 })
 }
 else if (message.content.startsWith("!osu user")) {
-  osuuser = message.content.substr("!osu user ".length);
+  var osuuser = message.content.substr("!osu user ".length);
   const url = 'https://osu.ppy.sh/api/get_user?u=' + osuuser + '&k=' + config.osu + '&type=string';
   axios.default.get(url)
   .then(response => {
@@ -462,9 +451,106 @@ else if (message.content.startsWith("!osu user")) {
     message.channel.send("Использование: !osu user Имя аккаунта")
   });
 }
+if (message.content.startsWith("!weather forecast")) {
+var arg = message.content.substr("!weather forecast ".length);
+const url = "http://api.openweathermap.org/data/2.5/forecast?q=" + arg + "&appid=" + config.weather;
+axios.default.get(url).then(resp =>{
+  for (let j = 0; j < 40; j++) {
+    if (resp.data.list[j].dt_txt.includes("00:00:00")) {
+      ind = j;
+      break;
+    }
+  }
+  for (let e = 0; e < 4; e++) {
+    var temp = [];
+    var pressure = [];
+    var weather = [];
+    var humidity = [];
+    var wspeed = [];
+    var deg;
+    var degnorm = [];
+    var country = resp.data.city.country;
+    var dt_txt = [];
+    var icon;
+    var ind;
+    for (let j = ind; j < ind + 8; j++) {
+      if (resp.data.list[j].dt_txt.includes("03:00:00") || resp.data.list[j].dt_txt.includes("09:00:00") || resp.data.list[j].dt_txt.includes("15:00:00") || resp.data.list[j].dt_txt.includes("21:00:00"))
+      {
+        continue;
+      }
+      if (resp.data.list[j].dt_txt.includes("12:00:00")) {
+        icon = resp.data.list[j].weather[0].icon;
+      }
+      temp.push(Math.round(resp.data.list[j].main.temp - 273.15));
+      pressure.push(Math.round(resp.data.list[j].main.pressure / 1.333))
+      weather.push(resp.data.list[j].weather[0].main);
+      humidity.push(resp.data.list[j].main.humidity);
+      wspeed.push(resp.data.list[j].wind.speed);
+      deg = resp.data.list[j].wind.deg;
+      if (deg >= 337.6 && deg <= 22.5) {
+        degnorm.push("северный");
+      }
+      else if (deg >= 22.6 && deg <= 67.5) {
+        degnorm.push("северо-восточный");
+      }
+      else if (deg >= 67.6 && deg <= 112.5) {
+        degnorm.push("восточный");
+      }
+      else if (deg >= 112.6 && deg <= 157.5) {
+        degnorm.push("юго-восточный");
+      }
+      else if (deg >= 157.6 && deg <= 202.5) {
+        degnorm.push("южный");
+      }
+      else if (deg >= 202.6 && deg <= 247.5) {
+        degnorm.push("юго-западный");
+      }
+      else if (deg >= 247.6 && deg <= 292.5) {
+        degnorm.push("западный");
+      }
+      else if (deg >= 292.6 && deg <= 337.5) {
+        degnorm.push("северо-западный");
+      }
+      dt_txt.push(resp.data.list[j].dt_txt);  
+    }
+    ind = ind + 8;
+    message.channel.send({embed : {
+      title: "**Информация о погоде в городе**: " + arg + "(" + country + ")",
+      footer:
+      {
+        text: "Информация от OpenWeatherMapAPI",
+        icon_url: "http://openweathermap.org/img/w/" + icon + ".png"
+      },
+      fields: [
+        {
+          name: "Информация на " + dt_txt[0],
+          value: "**Общее состояние**: " + weather[0] + "\n**Температура**: " + temp[0] + "°C\n**Давление**: " + pressure[0] + "мм.рт.с\n**Влажность**: " + humidity[0] + "%\n**Ветер " + degnorm[0] + "**: " + wspeed[0] + "м/с",
+          inline: true
+        },
+        {
+          name: "Информация на " + dt_txt[1],
+          value: "**Общее состояние**: " + weather[1] + "\n**Температура**: " + temp[1] + "°C\n**Давление**: " + pressure[1] + "мм.рт.с\n**Влажность**: " + humidity[1] + "%\n**Ветер " + degnorm[1] + "**: " + wspeed[1] + "м/с",
+          inline: true
+        },
+        {
+          name: "Информация на " + dt_txt[2],
+          value: "**Общее состояние**: " + weather[2] + "\n**Температура**: " + temp[2] + "°C\n**Давление**: " + pressure[2] + "мм.рт.с\n**Влажность**: " + humidity[2] + "%\n**Ветер " + degnorm[2] + "**: " + wspeed[2] + "м/с",
+          inline: true
+        },
+        {
+          name: "Информация на " + dt_txt[3],
+          value: "**Общее состояние**: " + weather[3] + "\n**Температура**: " + temp[3] + "°C\n**Давление**: " + pressure[3] + "мм.рт.с\n**Влажность**: " + humidity[3] + "%\n**Ветер " + degnorm[3] + "**: " + wspeed[3] + "м/с",
+          inline: true
+        }
+      ]
+    }});  
+  }
+  }).catch(error =>{
+    message.channel.send("Что-то пошло не так... Прикрепляю ответ API: " + error.response.status + " - " + error.response.statusText);
+  })
+}
 else if (message.content.startsWith("!weather"))
 {
-  const arg = message.content.substr("!weather ".length);
   const url = "http://api.openweathermap.org/data/2.5/weather?q=" + arg + "&APPID=" + config.weather
   axios.default.get(url).then(response =>{
     var temp = Math.round(response.data.main.temp - 273.15);
@@ -498,11 +584,10 @@ else if (message.content.startsWith("!weather"))
     else if (deg >= 292.6 && deg <= 337.5) {
       degnorm = "северо-западный";
     }
-    var country = response.data.sys.country;
-    var visibility = response.data.visibility;
+    var country = response.data.city.country;
     message.channel.send({embed : {
       title: "**Информация о погоде в городе**: " + arg + "(" + country + ")",
-      description: "**Общее состояние**: " + weather + "\n**Температура**: " + temp + "°C\n**Давление**: " + pressure + "мм.рт.с\n**Влажность**: " + humidity + "%\n**Ветер " + degnorm + "**: " + wspeed + "м/с\n**Видимость**: " + visibility + "м",
+      description: "**Общее состояние**: " + weather + "\n**Температура**: " + temp + "°C\n**Давление**: " + pressure + "мм.рт.с\n**Влажность**: " + humidity + "%\n**Ветер " + degnorm + "**: " + wspeed + "м/с",
       thumbnail:
       {
         url: "http://openweathermap.org/img/w/" + response.data.weather[0].icon + ".png"

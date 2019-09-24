@@ -1,6 +1,6 @@
 {
   "name": "codibbot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "The most democratic bot in history",
   "main": "bot.js",
   "scripts": {

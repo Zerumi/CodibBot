@@ -13,7 +13,9 @@ module.exports = {
             var oldtitle = r.embeds[0].title.substr("Голосование: ".length)
             var title = r.embeds[0].title.replace(oldtitle,args[1])
             var description = r.embeds[0].description;
-            var timestamp = r.embeds[0].timestamp;
+            if (description.split(' ')[2] !== "<@" + message.author.id + ">") {
+                return message.channel.send("Использовать это можно только создателю голосования. Создайте своё голосование с помощью !vote");
+            }
             var footertext = r.embeds[0].footer.text;
             var count = 0;
             if (footertext.includes("Голосование изменено")) {

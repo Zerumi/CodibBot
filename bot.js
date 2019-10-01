@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const Client = new Discord.Client();
 const commands = new Discord.Collection();
-const axios = require('axios');
 const config = require('./config.json');
 const fs = require('fs');
 Client.login(config.token);
@@ -43,34 +42,15 @@ Client.on("guildDelete", async () => {
   updateServerList()
 })
 
-Client.on("guildCreate", async () => {
+Client.on("guildCreate", async (guild) => {
+  guild.owner.send({
+    embed: {
+      title: "Спасибо за добавление нашего бота на сервер " + guild.name + "!",
+      description: "Для получения информации, введите !help"
+    }
+  })
   updateServerList()
 })
-
-Client.on('guildMemberAdd', member => {
-  var userRole = [];
-  var user = [];
-  var stream;
-stream = fs.createReadStream("./users.txt");
-var users;
-stream.on("data", function(data) {
-    var chunk = data.toString();
-    users = chunk;
-});
-  JSON.parse(users);
-  for(var i in users)
-    userRole.push(users[i]);
-
-  for(var i in users)
-    user.push(i);
-  
-  for (let index = 0; index < user.length; index++) {
-    const element = user[index];
-    if (element === member.id) {
-      return member.addRole(member.guild.roles.find('name', userRole[index]),"Авторизован как " + element);
-    }
-  }
-});
 
 Client.on('message',(message)=> {
 if (message.author.bot) {
@@ -87,6 +67,6 @@ try {
 	commands.get(command).execute(message, args);
   message.delete();
 } catch (error) {
-
+  // console.error(error);
 }
 });

@@ -4,18 +4,27 @@ module.exports = {
     description: "End",
     execute(message, args){
         if (args[0] === "") {
-            return message.channel.send("Использование: !end id сообщения голосования");
+            return message.channel.send("Использование: !vend id сообщения голосования");
           }
           message.channel.fetchMessage(args[0]).then(r => {
+            if (r.author.id !== "603999060726120448") {
+              return message.channel.send("Использование: !vend id сообщения голосования")
+            }
             const reactUP = (r.reactions.filter(a => a.emoji.name == r.client.emojis.find(emoji => emoji.name === "4959_ThumbsUP").name).map(reaction => reaction.count)[0] - 1);
             const reactDOWN = (r.reactions.filter(a => a.emoji.name == r.client.emojis.find(emoji => emoji.name === "2639_ThumbsDOWN").name).map(reaction => reaction.count)[0] - 1);
             if (reactUP + reactDOWN < Math.ceil((r.guild.memberCount - 1) * 0.65)){
-              message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
+              return message.channel.send("В голосовании должно принять участие как минимум " + Math.ceil((r.guild.memberCount - 1) * 0.65) + " пользователя(-ей)");
             }
             var footext = r.embeds[0].footer.text;
+            if (footext.includes("Голосование изменено")) {
+              var timestamp = r.embeds[0].timestamp;
+              if ((Date.parse(timestamp) + 300000) > Date.now()) {
+                return message.channel.send("Изменённое голосование нельзя закончить раньше чем через 5 минут после его изменения");
+              }
+            }
             var title = r.embeds[0].title;
             var description = r.embeds[0].description.replace("Чтобы проголосовать, нажмите на кнопку внизу", "");
-            if (footext.includes("Голосование завершилось: ")) {
+            if (footext.includes("Голосование завершилось")) {
               return message.channel.send("Голосование уже завершено");
             }
             if (title.includes("Блокировка пользователя"))

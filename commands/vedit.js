@@ -13,7 +13,7 @@ module.exports = {
             var oldtitle = r.embeds[0].title.substr("Голосование: ".length)
             var title = r.embeds[0].title.replace(oldtitle,args[1])
             var description = r.embeds[0].description;
-            if (description.split(' ')[2] !== "<@" + message.author.id + ">") {
+            if (description.split(' ')[2] !== "<@" + message.author.id + ">.") {
                 return message.channel.send("Использовать это можно только создателю голосования. Создайте своё голосование с помощью !vote");
             }
             var footertext = r.embeds[0].footer.text;
@@ -21,7 +21,12 @@ module.exports = {
             if (footertext.includes("Голосование изменено")) {
                 count = parseInt(footertext.split(' ')[2]);
             }
-            footertext = "Голосование изменено " + (count + 1) + declOfNum((count + 1), [" раз", " раза", " раз"]);
+            var timestamp = r.embeds[0].timestamp;
+            var date = Date.now()
+            if ((Date.parse(timestamp) + 600000) < date) {
+                return message.channel.send("Голосование нельзя изменить через 10 минут после его начала");
+            }
+            footertext = "Голосование изменено " + (count + 1) + declOfNum((count + 1), [" раз", " раза", " раз"]) + ". Голосование началось";
             r.edit({
                 embed: {
                     title: title,

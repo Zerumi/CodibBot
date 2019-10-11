@@ -1,12 +1,40 @@
-const fs = require('fs');
+const discord = require('discord.js');
 module.exports = {
     name: "vend",
     description: "End",
-    execute(message, args){
-        if (args[0] === "") {
-            return message.channel.send("Использование: !vend id сообщения голосования");
+    async execute(message, args){
+      var arrmessages = [];
+      var messagesid = [];
+      fetched = await message.channel.fetchMessages({limit: 100});
+      const botMessages = fetched.filter(msg => msg.author.id === "603999060726120448");
+      for (let i = 0; i < botMessages.array().length; i++) {
+          const element = botMessages.array()[i];
+          if (element.embeds.length === 0) {
+              continue;
           }
-          message.channel.fetchMessage(args[0]).then(r => {
+          else if (element.embeds[0].footer === null) {
+              continue;
+          }
+          else if (element.embeds[0].footer.text.includes("Голосование началось")) {
+              arrmessages.push(element.embeds[0].title.replace("Голосование: ", ""));
+              messagesid.push(element.id);
+          }
+      }
+      let embed = new discord.RichEmbed()
+      .setTitle("Выберите голосование для окончания")
+      .setFooter("У вас имеется 30 секунд на выбор");
+      arrmessages.forEach((entry,i) => {
+          embed.addField(entry,"Чтобы выбрать голосование, введите " + (i + 1),true)
+      });
+      if (embed.fields.length === 0) {
+          return message.channel.send("Нечего предложить");
+      }
+      return message.channel.send(embed).then(mes => {
+          const filter = m => m.author.id === message.author.id;
+          const collector = mes.channel.createMessageCollector(filter, { time: 40000, max: 1 });
+
+          collector.on('collect', m => {
+            message.channel.fetchMessage(messagesid[(parseInt(m.content) - 1)]).then(r => {
             if (r.author.id !== "603999060726120448") {
               return message.channel.send("Использование: !vend id сообщения голосования")
             }
@@ -68,13 +96,6 @@ module.exports = {
                 }})
               });
             }
-          if (title.includes("Новая заявка в")) {
-            if (reactUP <= reactDOWN){
-              return;
-            }
-            var stream = fs.createWriteStream("../users.txt");
-            stream.write("\n" + footext.split(" | ")[0] + " : " + footext.split(" | ")[1]);
-          }
           r.edit({ embed: {
               title: title,
               description: description,
@@ -93,6 +114,8 @@ module.exports = {
                 }
           }});
           r.clearReactions();
-        })        
-    }
+        })
+      })        
+    })
+  }
 }

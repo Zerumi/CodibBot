@@ -1,7 +1,12 @@
+const Message = require('discord.js').Message;
 const discord = require('discord.js');
 module.exports = {
     name: "vend",
     description: "End",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     async execute(message, args){
       var arrmessages = [];
       var messagesid = [];

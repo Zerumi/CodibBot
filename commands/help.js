@@ -1,6 +1,11 @@
+const Message = require('discord.js').Message;
 module.exports = {
     name: "help",
     description: "Help",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     execute(message, args) {
         message.channel.send({ embed: {
             title: "Помощь по командам",
@@ -9,6 +14,11 @@ module.exports = {
               {
                 name: "**!help**",
                 value: "То, что вы сейчас видите (помощь по командам)",
+                inline: true
+              },
+              {
+                name: "**!say (текст)** или **!say Первая строка | Вторая строка**",
+                value: "Позволяет что-то написать от лица бота",
                 inline: true
               },
               {
@@ -27,18 +37,13 @@ module.exports = {
                 inline: true
               },
               {
-                name: "**!vend**",
-                value: "Завершает выбранное голосование с подсчетом итогов и дальнейшими дествиями если голосование имеет дополнительный параметр (например блокировка)",
-                inline: true
-              },
-              {
                 name: "**!vedit**",
                 value: "Редактирует тему голосования (доступно только создателю этого голосования)",
                 inline: true
               },
               {
-                name: "**!say (текст)** или **!say Первая строка | Вторая строка**",
-                value: "Позволяет что-то написать от лица бота",
+                name: "**!vend**",
+                value: "Завершает выбранное голосование с подсчетом итогов и дальнейшими дествиями если голосование имеет дополнительный параметр (например блокировка)",
                 inline: true
               },
               {
@@ -65,7 +70,7 @@ module.exports = {
             footer:
             {
               text: require('../package.json').name + " " + require('../package.json').version + " by " + require("../package.json").author
-            } // + Build date
+            }
         }})        
     }
 }

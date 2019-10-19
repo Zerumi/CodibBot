@@ -1,6 +1,11 @@
+const Message = require('discord.js').Message;
 module.exports = {
 	name: 'ping',
 	description: 'Ping!',
+  /**
+   * @param {Message} message 
+   * @param {Array<string>} args 
+   */
 	execute(message, args) {
         message.channel.send({ embed : {
         title: "PONG!",

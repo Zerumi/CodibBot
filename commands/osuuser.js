@@ -1,7 +1,12 @@
+const Message = require('discord.js').Message;
 var axios = require('axios');
 module.exports = {
     name: "osuuser",
     description: "Osu user",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     execute(message,args){
         if (args[0] === "") {
           return message.channel.send("Использование: !osuuser Имя пользователя osu!");

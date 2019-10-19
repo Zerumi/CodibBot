@@ -1,8 +1,16 @@
-var axios = require('axios');
+const Message = require('discord.js').Message;
+const axios = require('axios');
 module.exports = {
     name: "weather",
     description: "Weather",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     execute(message, args){
+        if (!args[0]) {
+          message.channel.send("Использование !weather Город")
+        }
         const url = "http://api.openweathermap.org/data/2.5/weather?q=" + args[0] + "&APPID=" + require("../config.json").weather
         axios.default.get(url).then(response =>{
           var temp = Math.round(response.data.main.temp - 273.15);
@@ -52,7 +60,7 @@ module.exports = {
             }
           }});
         }).catch(error =>{
-            message.channel.send("Что-то пошло не так... Прикрепляю ответ API: " + error.response.status + " - " + error.response.statusText);
-        })    
+            message.channel.send("Город не найден. Список можно узнать тут https://docks-codibbot.glitch.me/city-list.html");
+        })
     }
 }

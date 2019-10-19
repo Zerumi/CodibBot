@@ -1,7 +1,12 @@
+const Message = require('discord.js').Message;
 const axios = require('axios');
 module.exports = {
     name: "wforecast",
     description: "Weather forecast",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     execute(message, args){
 const url = "http://api.openweathermap.org/data/2.5/forecast?q=" + args[0] + "&appid=" + require("../config.json").weather;
 axios.default.get(url).then(resp =>{

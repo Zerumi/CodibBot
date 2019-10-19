@@ -1,6 +1,11 @@
+const Message = require('discord.js').Message;
 module.exports = {
     name: "ban",
     description: "Ban",
+    /**
+     * @param {Message} message 
+     * @param {Array<string>} args 
+     */
     execute(message, args){
         if (args.length != 2)
         {

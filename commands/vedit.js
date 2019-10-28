@@ -10,7 +10,7 @@ module.exports = {
     async execute(message, args){
         var arrmessages = [];
         var messagesid = [];
-        fetched = await message.channel.fetchMessages({limit: 100});
+        var fetched = await message.channel.fetchMessages({limit: 100});
         const botMessages = fetched.filter(msg => msg.author.id === "603999060726120448");
         for (let i = 0; i < botMessages.array().length; i++) {
             const element = botMessages.array()[i];
@@ -67,8 +67,7 @@ module.exports = {
                             timestamp: new Date(Date.now())
                         }
                     })
-                    r.channel.send("@everyone");
-                    r.channel.send({
+                    r.channel.send("@everyone", {
                         embed: {
                             title: "Голосование №" + r.id + " было изменено!",
                             description: "Старая тема голосования: " + oldtitle + "\nНовая тема голосования: " + title.substr("Голосование: ".length),

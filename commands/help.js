@@ -52,6 +52,11 @@ module.exports = {
                 inline: true
               },
               {
+                name: "**!usersinfo**",
+                value: "Предоставляет информацию о максимальном количестве людей, которые откликнуться на голосование",
+                inline: true
+              },
+              {
                 name: "**!osuuser (Имя пользователя)**",
                 value: "Предоставляет информацию о пользователе https://osu.ppy.sh/",
                 inline: true

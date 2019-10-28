@@ -8,13 +8,13 @@ Client.login(config.token);
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
-	commands.set(command.name, command);
+  const command = require(`./commands/${file}`);
+  commands.set(command.name, command);
 }
 
 Client.on("ready", async () => {
   console.log("CodibBot started...");
-  Client.user.setStatus('online')
+  Client.user.setStatus('online');
   Client.user.setPresence({
       game: {
           name: 'силу Genast Studio',
@@ -58,6 +58,9 @@ if (message.author.bot) {
 }
 if (!(message.content.startsWith("!"))) {
   return;
+}
+if (!message.guild) {
+  return message.channel.send("Это действие можно сделать только на сервере. Добавьте меня к вам на сервер, перейдя по ссылке: https://discordapp.com/oauth2/authorize?client_id=603999060726120448&scope=bot&permissions=268958790");
 }
 
 const command = message.content.substr("!".length).split(' ')[0];

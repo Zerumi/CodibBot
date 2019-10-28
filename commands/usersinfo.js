@@ -7,11 +7,15 @@ module.exports = {
      * @param {Array<string>} args 
      */
     execute(message,args){
+        if (!message.guild) {
+          return message.channel.send("Это действие можно сделать только на сервере. Добавьте меня к вам на сервер, введя !invite");
+        }
         var count = {
             "online": 0,
             "idle": 0,
             "dnd": 0,
-            "offline": 0
+            "offline": 0,
+            "bot" : 0
         };
         var arrbots = [];
         message.guild.members.map(member => member.user.bot).forEach(function (entry,i){
@@ -31,17 +35,13 @@ module.exports = {
         userstatus.forEach(function(i) {count[i] = (count[i]||0) + 1;})
         message.channel.send({
             embed: {
-                title: "Список избирателей (исключая " + arrbots.length + " ботов)", // make block ban/kick votes in closed for @everyone channels (and !vote not for ban)
+                title: "Список избирателей (исключая " + count.bot + " ботов)", // make block ban/kick votes in closed for @everyone channels (and !vote not for ban)
                 description: `${message.client.emojis.find(e => e.name === "online")}` + "Участников в валидации: " + count.online + `\n${message.client.emojis.find(e => e.name === "away")}` + "Участников в спящем режиме: " + count.idle + `\n${message.client.emojis.find(e => e.name === "dnd")}` + "Участников в режиме медитации: " + count.dnd + `\n${message.client.emojis.find(e => e.name === "offline")}` + "Участников в отъезде: " + count.offline,
                 footer: {
-                    text: "О голосовании придет информация " + (userstatus.length - count.dnd - arrbots.length) + " людям"
+                    text: "О голосовании придет информация " + (userstatus.length - count.dnd - count.bot) + " людям"
                 },
                 timestamp: new Date(Date.now())
             }
-        }).then(mes => {
-            setTimeout(() => {
-                mes.delete();
-            }, 5000);
         })
     }
 }
